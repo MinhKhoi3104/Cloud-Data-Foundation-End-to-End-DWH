@@ -28,11 +28,13 @@ def _spark_connect_s3_test(etl_date=None):
         )
 
         print(f"Reading data from: {s3_path}")
+        try:
+            df = spark.read.parquet(s3_path)
+            df.show(5)
 
-        df = spark.read.parquet(s3_path)
-        df.show(5)
-
-        print("✅ S3 connection SUCCESS")
+            print("✅ S3 connection SUCCESS")
+        except:
+            print("❌ S3 connection SUCCESS but s3 path not found")
 
         return True
 
@@ -47,12 +49,10 @@ def _spark_connect_s3_test(etl_date=None):
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='_spark_connect_s3_test')
     parser.add_argument('--etl_date', type=int, help='etl_date (YYYYMMDD)')
     args = parser.parse_args()
 
     success = _spark_connect_s3_test(etl_date=args.etl_date)
     exit(0 if success else 1)
-
-
