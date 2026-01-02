@@ -4,7 +4,7 @@ config_path = os.path.join(current_dir, '..')
 config_path = os.path.abspath(config_path)
 sys.path.insert(0, config_path)
 from pyspark.sql import SparkSession
-from _01_config.database_config import *
+from _01_config.data_storage_config import *
 from _01_config.jar_paths import *
 
 # Using to create spark session at Bronze Layer
@@ -17,6 +17,14 @@ def create_spark_s3_session(appName):
             .config(
                 "spark.hadoop.fs.s3a.aws.credentials.provider",
                 "com.amazonaws.auth.profile.ProfileCredentialsProvider"
+            )
+            .config(
+                "spark.hadoop.fs.s3a.profile",
+                "default"
+            )
+            .config(
+                "spark.hadoop.fs.s3a.endpoint",
+                "s3.ap-southeast-1.amazonaws.com"
             )
             .getOrCreate()
         )
@@ -116,3 +124,28 @@ def create_spark_redshift_session(appName):
     spark.sparkContext.setLogLevel("WARN")
 
     return spark
+
+# Create S3 object if not exist
+def ensure_s3_prefix(spark,s3_path):
+    try:
+        if not s3_path.startswith("s3a://"):
+            raise ValueError("S3 path must start with s3a://")
+
+        hadoop_conf = spark._jsc.hadoopConfiguration()
+
+        fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(
+            spark._jvm.java.net.URI(s3_path),
+            hadoop_conf
+        )
+
+        path = spark._jvm.org.apache.hadoop.fs.Path(s3_path)
+
+        if not fs.exists(path):
+            fs.mkdirs(path)
+            message = f"Created S3 bronze layer: {s3_path}"
+        else:
+            message = f"S3 bronze layer: {s3_path} is exist"
+        
+        return print(message)
+    except Exception as e:
+        return print(f"❌ ERROR: {e}")
