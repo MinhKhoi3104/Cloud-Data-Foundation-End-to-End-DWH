@@ -7,3 +7,6 @@ REDSHIFT_JDBC = {
         "password": "Devdata123"
     }
 }
+
+# S3 data lake path
+S3_DATALAKE_PATH = "s3a://data-pipeline-e2e-datalake-98c619f9"

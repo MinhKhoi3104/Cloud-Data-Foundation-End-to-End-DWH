@@ -5,6 +5,7 @@ config_path = os.path.abspath(config_path)
 sys.path.insert(0, config_path)
 from _002_src.data_pipeline._01_config.jar_paths import *
 from _002_src.data_pipeline._02_utils.utils import *
+from _002_src.data_pipeline._01_config.data_storage_config import *
 from datetime import date
 
 def _spark_connect_s3_test(etl_date=None):
@@ -23,8 +24,7 @@ def _spark_connect_s3_test(etl_date=None):
 
         # Build S3 path theo etl_date
         s3_path = (
-            "s3a://data-pipeline-e2e-datalake-98c619f9/"
-            f"customer_search_log_data/{etl_date}/"
+            f"{S3_DATALAKE_PATH}/customer_search_log_data/{etl_date}"
         )
 
         print(f"Reading data from: {s3_path}")
