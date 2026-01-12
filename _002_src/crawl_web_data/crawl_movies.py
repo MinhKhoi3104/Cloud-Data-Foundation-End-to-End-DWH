@@ -79,7 +79,8 @@ while True:
     page += 1
     time.sleep(0.3)
     
-OUTPUT = Path("_000_data") / "rophim_all_movies.parquet"
+OUTPUT = Path("_000_data") / "crawl_data" / "rophim_all_movie_movies.parquet"
+
 
 # Convert sang DataFrame
 df = pd.DataFrame(all_movies)
