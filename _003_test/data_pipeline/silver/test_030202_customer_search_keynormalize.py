@@ -51,7 +51,7 @@ def test_030202_customer_search_keynormalize(etl_date=None):
             tests_passed += 0
         
         # Test Summary
-        print(f"""===== SUMMARY: USER_PLANS_MAP (SILVER LAYER) PASSED: {tests_passed}/1 =====""")
+        print(f"""===== SUMMARY: CUSTOMER_SEARCH_KEYNORMALIZE (SILVER LAYER) PASSED: {tests_passed}/1 =====""")
          
         return True
 
