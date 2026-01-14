@@ -73,7 +73,7 @@ def _030201_user_plans_map(etl_date=None):
             .mode("overwrite")\
             .save(s3_silver_path)
 
-        print("===== ✅ Load data to iceberg.silver.user_plans_map successfully !... =====")
+        print("===== ✅ Load data to silver.user_plans_map successfully !... =====")
          
         return True
 
