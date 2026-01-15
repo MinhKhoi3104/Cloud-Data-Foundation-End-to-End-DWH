@@ -121,8 +121,6 @@ def create_silver_spark_session(appName: str):
 
     if is_airflow:
         print("🚀 Silver on Airflow → IAM Role (Hadoop default)")
-        # ❗ KHÔNG set credentials provider
-        # Hadoop sẽ tự detect Instance Profile
         pass
 
     else:
@@ -147,8 +145,9 @@ def create_silver_spark_session(appName: str):
 def create_gold_spark_session(appName: str):
     """
     Gold:
-    - Read Iceberg (S3)
+    - Parquet on S3
     - Write Redshift
+    - Appy Iceberg
     - Works for Local & Airflow
     """
 
@@ -163,6 +162,7 @@ def create_gold_spark_session(appName: str):
                 # Hadoop S3A (AWS SDK v1)
                 HADOOP_AWS_JAR_PATH,
                 AWS_JAVA_SDK_BUNDLE_JAR_PATH,
+                ICEBERG_AWS_BUNDLE_JAR_PATH,
 
                 # Iceberg (AWS SDK v2)
                 ICEBERG_SPARK_RUNTIME_JAR_PATH,
@@ -183,10 +183,7 @@ def create_gold_spark_session(appName: str):
             "spark.sql.catalog.iceberg",
             "org.apache.iceberg.spark.SparkCatalog"
         )
-        .config(
-            "spark.sql.catalog.iceberg.type",
-            "hadoop"
-        )
+        .config("spark.sql.catalog.iceberg.catalog-impl", "org.apache.iceberg.aws.glue.GlueCatalog")
         .config(
             "spark.sql.catalog.iceberg.warehouse",
             S3_ICEBERG_PATH
@@ -196,7 +193,11 @@ def create_gold_spark_session(appName: str):
             "org.apache.iceberg.aws.s3.S3FileIO"
         )
 
-        # ===== Hadoop S3A =====
+        # ===== Hadoop S3A/S3 =====
+        .config(
+            "spark.hadoop.fs.s3.impl",
+            "org.apache.hadoop.fs.s3a.S3AFileSystem"
+        )
         .config(
             "spark.hadoop.fs.s3a.impl",
             "org.apache.hadoop.fs.s3a.S3AFileSystem"
@@ -205,8 +206,6 @@ def create_gold_spark_session(appName: str):
 
     if is_airflow:
         print("🚀 Gold on Airflow → IAM Role")
-        # ❗ KHÔNG set fs.s3a.aws.credentials.provider
-        # Hadoop sẽ tự detect Instance Profile
         pass
 
     else:
@@ -245,9 +244,9 @@ def ensure_s3_prefix(spark,s3_path):
 
         if not fs.exists(path):
             fs.mkdirs(path)
-            message = f"Created S3 bronze layer: {s3_path}"
+            message = f"Created S3 object: {s3_path}"
         else:
-            message = f"S3 bronze layer: {s3_path} is exist"
+            message = f"{s3_path} is exist"
         
         return print(message)
     except Exception as e:
@@ -258,10 +257,11 @@ def write_to_redshift(df: DataFrame,table_name: str,mode: str):
     df.write \
         .format("io.github.spark_redshift_community.spark.redshift") \
         .option("url", REDSHIFT_JDBC["url"]) \
+        .option("aws_iam_role", REDSHIFT_IAM_ROLE_ARN) \
         .option("dbtable", table_name) \
         .option("user", REDSHIFT_JDBC["properties"]["user"]) \
         .option("password", REDSHIFT_JDBC["properties"]["password"]) \
-        .option("tempdir", REDSHIFT_JDBC["url"]) \
+        .option("tempdir", REDSHIFT_JDBC["tempdir"]) \
         .mode(mode) \
         .save()
 
