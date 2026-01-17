@@ -162,7 +162,7 @@ def create_gold_spark_session(appName: str):
                 # Hadoop S3A (AWS SDK v1)
                 HADOOP_AWS_JAR_PATH,
                 AWS_JAVA_SDK_BUNDLE_JAR_PATH,
-                ICEBERG_AWS_BUNDLE_JAR_PATH,
+                SPARK_AVRO_JAR_PATH,
 
                 # Iceberg (AWS SDK v2)
                 ICEBERG_SPARK_RUNTIME_JAR_PATH,
