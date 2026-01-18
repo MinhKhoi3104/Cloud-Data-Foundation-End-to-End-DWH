@@ -1,7 +1,5 @@
 import os, sys
 current_dir = os.path.dirname(__file__)
-os.environ['PYSPARK_PYTHON'] = sys.executable
-os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
 config_path = os.path.join(current_dir, '..','..','..','..')
 config_path = os.path.abspath(config_path)
 sys.path.insert(0, config_path)
