@@ -6,7 +6,12 @@ This document describes the structure and usage of Terraform modules to deploy i
 
 1. **Bootstrap** - Creates S3 bucket to store Terraform state
 2. **S3** - Creates S3 data lake buckets for data pipeline
+
+![s3_bucket](/image/s3_buckets.png)
+
 3. **Redshift** - Creates Redshift Serverless for data warehouse
+
+![redshift_overview](/image/redshift_overview.png)
 
 ## 🏗️ Architecture
 
