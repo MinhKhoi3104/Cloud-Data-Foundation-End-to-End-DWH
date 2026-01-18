@@ -59,6 +59,10 @@ def _030302_dim_category_append(etl_date=None):
         def remove_accents(s: str) -> str:
             if s is None:
                 return None
+
+            # Handle Vietnamese special characters first
+            s = s.replace("Đ", "D").replace("đ", "d")
+
             return (
                 unicodedata
                 .normalize("NFKD", s)
