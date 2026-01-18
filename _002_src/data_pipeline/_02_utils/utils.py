@@ -279,7 +279,7 @@ def read_from_redshift(
     spark.read
     .format("jdbc")
     .option("url", REDSHIFT_JDBC["url"])
-    .option("dbtable", "gold.dim_category")
+    .option("dbtable", table_name)
     .option("user", REDSHIFT_JDBC["properties"]["user"])
     .option("password", REDSHIFT_JDBC["properties"]["password"])
     .option("driver", "com.amazon.redshift.jdbc.Driver")
