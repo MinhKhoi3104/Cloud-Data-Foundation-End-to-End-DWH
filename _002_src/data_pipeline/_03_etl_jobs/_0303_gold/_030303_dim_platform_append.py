@@ -63,16 +63,11 @@ def _030303_dim_platform_append(etl_date=None):
         ).distinct()
 
         # Extract old data of dim_platform tbl
-        try:
-            tg_df_old = spark.sql("SELECT * FROM iceberg.gold.dim_platform")
-            # Choose specific columns to compare
-            tg_df_old = tg_df_old.select("platform", "device_type")
-            # Just choose new data
-            insert_df = tg_df.subtract(tg_df_old)
-        except Exception:
-            # Table might not exist yet or be empty
-            insert_df = tg_df
-
+        tg_df_old = spark.sql("SELECT * FROM iceberg.gold.dim_platform")
+        # Choose specific columns to compare
+        tg_df_old = tg_df_old.select("platform", "device_type")
+        # Just choose new data
+        insert_df = tg_df.subtract(tg_df_old)
         # Create surrogate key
         insert_df = allocate_surrogate_keys(
             spark,
@@ -84,18 +79,6 @@ def _030303_dim_platform_append(etl_date=None):
 
         insert_records_count = insert_df.count()
 
-        if insert_records_count > 0:
-
-            print(f'===== The number of insert records: {insert_records_count} =====')
-
-            # LOAD
-            insert_df.writeTo("iceberg.gold.dim_platform").append()
-            print("===== ✅ Completely insert new records into iceberg.gold.dim_platform! =====")
-
-        else:
-            print('===== No records need to insert! =====')
-        
-        
         # Create Redshift schema
         sql_query = "CREATE SCHEMA IF NOT EXISTS gold;"
         execute_sql_ddl(spark,sql_query)
@@ -110,14 +93,27 @@ def _030303_dim_platform_append(etl_date=None):
 
         # Load to Redshift
         """
-        Read data from iceberg and insert to Redshift
+        Load data to Redshift first
         """
-        # Read data from iceberg
-        ib_df = spark.sql("SELECT * FROM iceberg.gold.dim_platform")
-        
-        # LOAD
-        write_to_redshift(ib_df, "gold.dim_platform","overwrite")
-        print("===== ✅ Completely insert new records into Redshift: gold.dim_platform! =====")
+        if insert_records_count > 0:
+            print(f'===== The number of insert records: {insert_records_count} =====')
+            # LOAD
+            write_to_redshift(insert_df, "gold.dim_platform","append")
+            print("===== ✅ Completely insert new records into Readshift: gold.dim_platform! =====")
+        else:
+            print('===== No records need to insert! =====') 
+        # Load to Iceberg
+        """
+        Load data to Iceberg second
+        """
+        if insert_records_count > 0:
+            print(f'===== The number of insert records: {insert_records_count} =====')  
+            # LOAD
+            insert_df.writeTo("iceberg.gold.dim_platform").append()
+            print("===== ✅ Completely insert new records into iceberg.gold.dim_platform! =====")
+        else:
+            print('===== No records need to insert! =====')
+    
         return True
 
     except Exception as e:
