@@ -1,10 +1,10 @@
 import os, sys
 current_dir = os.path.dirname(__file__)
-config_path = os.path.join(current_dir, '..','..','..','..')
+config_path = os.path.join(current_dir, '..','..')
 config_path = os.path.abspath(config_path)
 sys.path.insert(0, config_path)
-from _002_src.data_pipeline._02_utils.utils import *
-from _002_src.data_pipeline._02_utils.surrogate_key_registry import *
+from _02_utils.utils import *
+from _02_utils.surrogate_key_registry import *
 from datetime import date
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
@@ -44,7 +44,7 @@ def _030306_dim_subscription_append(etl_date=None):
         USING iceberg;
         """)
 
-        # Normalize and Logic
+        # Normalize
         # plan_name: lower(trim(plan_name))
         # plan_type: lower(trim(plan_type))
         # is_paid: case when lower(trim(plan_type)) = 'giftcode' then 0 else 1 end
@@ -77,24 +77,8 @@ def _030306_dim_subscription_append(etl_date=None):
             "plan_name",
             "subscription_key"
         )
-        insert_df = insert_df.cache()
         insert_records_count = insert_df.count()
 
-        if insert_records_count > 0:
-
-            print(f'===== The number of insert records: {insert_records_count} =====')
-
-            # LOAD to Iceberg
-            # Reorder columns to match table definition: subscription_key, plan_name, plan_type, is_paid
-            insert_df = insert_df.select("subscription_key", "plan_name", "plan_type", "is_paid")
-            
-            insert_df.writeTo("iceberg.gold.dim_subscription").append()
-            print("===== ✅ Completely insert new records into iceberg.gold.dim_subscription! =====")
-
-        else:
-            print('===== No records need to insert! =====')
-        
-        
         # Create Redshift schema
         sql_query = "CREATE SCHEMA IF NOT EXISTS gold;"
         execute_sql_ddl(spark,sql_query)
@@ -108,16 +92,34 @@ def _030306_dim_subscription_append(etl_date=None):
         );"""
         execute_sql_ddl(spark,sql_query)
 
-        # Load to Redshift
+       # Load to Redshift
         """
-        Read data from iceberg and insert to Redshift
+        Load data to Redshift first
         """
-        # Read data from iceberg
-        ib_df = spark.sql("SELECT * FROM iceberg.gold.dim_subscription")
+        if insert_records_count > 0:
+
+            print(f'===== The number of insert records: {insert_records_count} =====')
+            # LOAD
+            write_to_redshift(insert_df, "gold.dim_subscription","append")
+            print("===== ✅ Completely insert new records into Readshift: gold.dim_subscription! =====")
+        else:
+            print('===== No records need to insert! =====')
+
+        # Load to Iceberg
+        """
+        Load data to Iceberg second
+        """
+        if insert_records_count > 0:
+
+            print(f'===== The number of insert records: {insert_records_count} =====')
+
+            # LOAD
+            insert_df.writeTo("iceberg.gold.dim_subscription").append()
+            print("===== ✅ Completely insert new records into iceberg.gold.dim_subscription! =====")
+
+        else:
+            print('===== No records need to insert! =====')
         
-        # LOAD
-        write_to_redshift(ib_df, "gold.dim_subscription","append")
-        print("===== ✅ Completely insert new records into Redshift: gold.dim_subscription! =====")
         return True
 
 

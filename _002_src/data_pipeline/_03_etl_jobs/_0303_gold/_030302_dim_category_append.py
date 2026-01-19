@@ -59,6 +59,10 @@ def _030302_dim_category_append(etl_date=None):
         def remove_accents(s: str) -> str:
             if s is None:
                 return None
+
+            # Handle Vietnamese special characters first
+            s = s.replace("Đ", "D").replace("đ", "d")
+
             return (
                 unicodedata
                 .normalize("NFKD", s)
@@ -117,18 +121,6 @@ def _030302_dim_category_append(etl_date=None):
 
         insert_records_count = insert_df.count()
 
-        if insert_records_count > 0:
-
-            print(f'===== The number of insert records: {insert_records_count} =====')
-
-            # LOAD
-            insert_df.writeTo("iceberg.gold.dim_category").append()
-            print("===== ✅ Completely insert new records into iceberg.gold.dim_category! =====")
-
-        else:
-            print('===== No records need to insert! =====')
-        
-        
         # Create Redshift schema
         sql_query = "CREATE SCHEMA IF NOT EXISTS gold;"
         execute_sql_ddl(spark,sql_query)
@@ -141,16 +133,33 @@ def _030302_dim_category_append(etl_date=None):
         );"""
         execute_sql_ddl(spark,sql_query)
 
-        # Load to Redshift
+       # Load to Redshift
         """
-        Read data from iceberg and insert to Redshift
+        Load data to Redshift first
         """
-        # Read data from iceberg
-        ib_df = spark.sql("SELECT * FROM iceberg.gold.dim_category")
-        
-        # LOAD
-        write_to_redshift(ib_df, "gold.dim_category","overwrite")
-        print("===== ✅ Completely insert new records into Readshift: gold.dim_category! =====")
+        if insert_records_count > 0:
+
+            print(f'===== The number of insert records: {insert_records_count} =====')
+            # LOAD
+            write_to_redshift(insert_df, "gold.dim_category","append")
+            print("===== ✅ Completely insert new records into Readshift: gold.dim_category! =====")
+        else:
+            print('===== No records need to insert! =====')
+
+        # Load to Iceberg
+        """
+        Load data to Iceberg second
+        """
+        if insert_records_count > 0:
+
+            print(f'===== The number of insert records: {insert_records_count} =====')
+
+            # LOAD
+            insert_df.writeTo("iceberg.gold.dim_category").append()
+            print("===== ✅ Completely insert new records into iceberg.gold.dim_category! =====")
+
+        else:
+            print('===== No records need to insert! =====')
         
         return True
 
