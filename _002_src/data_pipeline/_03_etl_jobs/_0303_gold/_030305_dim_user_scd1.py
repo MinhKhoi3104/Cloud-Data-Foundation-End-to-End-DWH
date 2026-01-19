@@ -9,7 +9,6 @@ from datetime import date
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql.window import Window
-import unicodedata
 
 def _030305_dim_user_scd1(etl_date=None):
     spark = None

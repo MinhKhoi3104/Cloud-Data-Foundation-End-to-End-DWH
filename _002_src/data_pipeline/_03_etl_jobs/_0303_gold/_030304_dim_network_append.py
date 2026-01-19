@@ -91,18 +91,6 @@ def _030304_dim_network_append(etl_date=None):
         )
 
         insert_records_count = insert_df.count()
-
-        if insert_records_count > 0:
-
-            print(f'===== The number of insert records: {insert_records_count} =====')
-
-            # LOAD
-            insert_df.writeTo("iceberg.gold.dim_network").append()
-            print("===== ✅ Completely insert new records into iceberg.gold.dim_network! =====")
-
-        else:
-            print('===== No records need to insert! =====')
-        
         
         # Create Redshift schema
         sql_query = "CREATE SCHEMA IF NOT EXISTS gold;"
@@ -119,14 +107,31 @@ def _030304_dim_network_append(etl_date=None):
 
         # Load to Redshift
         """
-        Read data from iceberg and insert to Redshift
+        Load data to Redshift first
         """
-        # Read data from iceberg
-        ib_df = spark.sql("SELECT * FROM iceberg.gold.dim_network")
-        
-        # LOAD
-        write_to_redshift(ib_df, "gold.dim_network","overwrite")
-        print("===== ✅ Completely insert new records into Readshift: gold.dim_network! =====")
+        if insert_records_count > 0:
+
+            print(f'===== The number of insert records: {insert_records_count} =====')
+            # LOAD
+            write_to_redshift(insert_df, "gold.dim_network","append")
+            print("===== ✅ Completely insert new records into Readshift: gold.dim_network! =====")
+        else:
+            print('===== No records need to insert! =====')
+
+        # Load to Iceberg
+        """
+        Load data to Iceberg second
+        """
+        if insert_records_count > 0:
+
+            print(f'===== The number of insert records: {insert_records_count} =====')
+
+            # LOAD
+            insert_df.writeTo("iceberg.gold.dim_network").append()
+            print("===== ✅ Completely insert new records into iceberg.gold.dim_network! =====")
+
+        else:
+            print('===== No records need to insert! =====')
 
         return True
 
