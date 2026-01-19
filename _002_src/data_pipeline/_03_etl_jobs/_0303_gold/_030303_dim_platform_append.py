@@ -116,7 +116,7 @@ def _030303_dim_platform_append(etl_date=None):
         ib_df = spark.sql("SELECT * FROM iceberg.gold.dim_platform")
         
         # LOAD
-        write_to_redshift(ib_df, "gold.dim_platform","append")
+        write_to_redshift(ib_df, "gold.dim_platform","overwrite")
         print("===== ✅ Completely insert new records into Redshift: gold.dim_platform! =====")
         return True
 
