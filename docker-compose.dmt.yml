@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - aws_e2e
+      - aws_e2e_network
     restart: unless-stopped
   
   pgadmin:
@@ -29,11 +29,11 @@ services:
     ports:
       - "${PGADMIN_PORT:-5050}:80"
     networks:
-      - aws_e2e
+      - aws_e2e_network
     restart: unless-stopped
 
 networks:
-  aws_e2e:
+  aws_e2e_network:
     external: true
 
 volumes:
