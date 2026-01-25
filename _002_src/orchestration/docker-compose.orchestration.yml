@@ -1,0 +1,208 @@
+volumes:
+  postgres-db-volume:
+  airflow_logs:
+
+networks:
+  aws_e2e_network:
+    external: true
+
+# ==========================================================
+# AIRFLOW COMMON CONFIG
+# ==========================================================
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env.aws
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres:5432/airflow
+    AIRFLOW__WEBSERVER__SECRET_KEY: super-secret-airflow-key-123
+    AIRFLOW__CORE__FERNET_KEY: 81HqDtbqAywKSOumSha3BhWNOdQ26slT6K0YaZeZyPs=
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Ho_Chi_Minh
+    PYTHONPATH: /opt/airflow:/opt/airflow/data_pipeline
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./data_pipeline:/opt/airflow/data_pipeline
+    - airflow_logs:/opt/airflow/logs
+    - ~/.aws:/home/airflow/.aws:ro
+  networks:
+    - aws_e2e_network
+
+services:
+
+  # ==========================================================
+  # POSTGRES
+  # ==========================================================
+  airflow_postgres:
+    image: postgres:15
+    container_name: airflow_postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - aws_e2e_network
+    restart: always
+
+  # ==========================================================
+  # AIRFLOW INIT
+  # ==========================================================
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow_init
+    depends_on:
+      airflow_postgres:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        echo "Waiting for airflow_postgres..."
+        sleep 5
+        
+        echo "Testing database connection..."
+        python -c "
+        import psycopg2
+        import time
+        for i in range(10):
+            try:
+                conn = psycopg2.connect(
+                    host='airflow_postgres',
+                    port=5432,
+                    user='airflow',
+                    password='airflow',
+                    database='airflow'
+                )
+                conn.close()
+                print('Database connection successful!')
+                break
+            except Exception as e:
+                print(f'Attempt {i+1}: {e}')
+                time.sleep(3)
+        "
+        
+        echo "Initializing Airflow database..."
+        airflow db migrate
+        
+        echo "Creating admin user..."
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com || echo "User already exists"
+        
+        echo "Airflow initialization completed successfully!"
+    restart: "no"
+
+  # ==========================================================
+  # AIRFLOW WEBSERVER
+  # ==========================================================
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: airflow_webserver
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    command: airflow webserver
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    env_file:
+      - .env.aws
+    restart: always
+
+  # ==========================================================
+  # AIRFLOW SCHEDULER
+  # ==========================================================
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow_scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: airflow scheduler
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname) || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    env_file:
+      - .env.aws
+    restart: always
+
+  # ==========================================================
+  # SPARK MASTER
+  # ==========================================================
+  spark-master:
+    image: apache/spark:3.5.3
+    container_name: spark-master
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host spark-master --port 7077 --webui-port 8081
+    env_file:
+      - .env.aws
+    environment:
+      SPARK_RUNTIME_ENV: airflow
+    ports:
+      - "7077:7077"
+      - "8081:8081"
+    networks:
+      - aws_e2e_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: always
+
+  # ==========================================================
+  # SPARK WORKER
+  # ==========================================================
+  spark-worker:
+    image: apache/spark:3.5.3
+    container_name: spark-worker
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8082
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env.aws
+    environment:
+      SPARK_RUNTIME_ENV: airflow
+      SPARK_WORKER_MEMORY: "6G"
+      SPARK_WORKER_CORES: "1"
+    networks:
+      - aws_e2e_network
+    restart: always
