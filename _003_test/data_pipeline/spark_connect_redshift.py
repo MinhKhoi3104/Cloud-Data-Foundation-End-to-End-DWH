@@ -1,10 +1,10 @@
 import os, sys
 current_dir = os.path.dirname(__file__)
-config_path = os.path.join(current_dir, '..','..')
+config_path = os.path.join(current_dir)
 config_path = os.path.abspath(config_path)
 sys.path.insert(0, config_path)
-from _002_src.data_pipeline._01_config.jar_paths import *
-from _002_src.data_pipeline._02_utils.utils import *
+from config.jar_paths import *
+from utils.utils import *
 from datetime import date
 
 def _spark_connect_redshift_test(etl_date=None):

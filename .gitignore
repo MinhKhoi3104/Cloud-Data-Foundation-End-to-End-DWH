@@ -4,3 +4,4 @@ __pycache__/
 
 # <<<<<<<<<======== set gitignore .env when reality build
 # .env
+# .env.aws

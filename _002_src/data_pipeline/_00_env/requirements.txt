@@ -1,6 +1,0 @@
-pandas==2.1.4
-dbt-core==1.7.13
-dbt-redshift==1.7.7
-pyspark==3.5.3
-
-
