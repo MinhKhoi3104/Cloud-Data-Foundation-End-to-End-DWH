@@ -122,7 +122,8 @@ def _030308_fact_customer_search_append(etl_date=None):
                 col("dc1.category_key").alias("sub1_keyword_category").cast(IntegerType()),
                 col("dc2.category_key").alias("sub2_keyword_category").cast(IntegerType()),
                 col("dc3.category_key").alias("sub3_keyword_category").cast(IntegerType())
-            )
+            )\
+            .dropDuplicates()
         
         # Extract old data of fact_customer_search tbl
         tg_df_old = spark.sql(f"""

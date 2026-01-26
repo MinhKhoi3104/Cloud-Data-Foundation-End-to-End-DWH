@@ -107,6 +107,13 @@ def _030202_customer_search_keynormalize(etl_date=None):
         del chunks
         gc.collect()
 
+        keywords["user_id"] = (
+        keywords["user_id"]
+        .astype("string")
+        .fillna("00000000")
+        .replace("", "00000000")
+        )
+
         print(f"✅ Keywords loaded: {len(keywords):,}")
 
         # ==================================================

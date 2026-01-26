@@ -201,7 +201,7 @@ services:
       - .env.aws
     environment:
       SPARK_RUNTIME_ENV: airflow
-      SPARK_WORKER_MEMORY: "6G"
+      SPARK_WORKER_MEMORY: "4G"
       SPARK_WORKER_CORES: "1"
     networks:
       - aws_e2e_network

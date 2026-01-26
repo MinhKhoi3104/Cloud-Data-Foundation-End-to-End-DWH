@@ -84,7 +84,8 @@ def test_030308_fact_customer_search_append(etl_date=None):
                 col("dc1.category_key").alias("sub1_keyword_category").cast(IntegerType()),
                 col("dc2.category_key").alias("sub2_keyword_category").cast(IntegerType()),
                 col("dc3.category_key").alias("sub3_keyword_category").cast(IntegerType())
-            )
+            )\
+            .dropDuplicates()
         
         # Target đate
         target_df = read_from_redshift(spark,"gold.fact_customer_search")

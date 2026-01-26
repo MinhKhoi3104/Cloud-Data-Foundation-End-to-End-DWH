@@ -226,14 +226,12 @@ with DAG(
             conf = {
             "spark.executor.instances": "1",
             "spark.executor.cores": "1",
-            "spark.executor.memory": "4g",
-            "spark.executor.memoryOverhead": "768m",
-            "spark.driver.memory": "512m",
-            "spark.driver.memoryOverhead": "256m",
-            "spark.sql.shuffle.partitions": "1",
-            "spark.default.parallelism": "1",
-            "spark.sql.adaptive.enabled": "true",
-            "spark.sql.adaptive.coalescePartitions.enabled": "true",
+            "spark.executor.memory": "3g",
+            "spark.executor.memoryOverhead": "1g",
+            "spark.driver.memory": "1g",
+            "spark.driver.memoryOverhead": "512m",
+            "spark.sql.shuffle.partitions": "2",
+            "spark.default.parallelism": "2",
             }
         )
 
