@@ -27,12 +27,10 @@ with DAG(
     tags=["spark", "bronze", "silver", "gold"],
     params={
         "etl_date": Param(
-            default=(datetime.now() - timedelta(days=1)).strftime('%Y%m%d'),
-            type="string",
+            default=None,
+            type=["null", "string"],
             title="ETL Date",
             description="ETL date in YYYYMMDD format (e.g., 20250123)",
-            minLength=8,
-            maxLength=8,
             pattern="^[0-9]{8}$",  # Validate YYYYMMDD format
         )
     },
@@ -44,7 +42,7 @@ with DAG(
     # ======================================================
     SPARK_CONN_ID = "spark_default"
     APP_BASE_PATH = "/opt/airflow/data_pipeline/_03_etl_jobs"
-    ETL_DATE = "{{ params.etl_date | string }}"
+    ETL_DATE = "{{ params.etl_date if params.etl_date is not none else ds_nodash }}"
 
     start = EmptyOperator(task_id="start")
 
