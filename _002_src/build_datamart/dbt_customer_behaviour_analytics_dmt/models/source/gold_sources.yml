@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: gold
+    description: "Gold layer tables stored in PostgreSQL"
+    database: postgres                      # tên database Postgres
+    schema: dwh_user_search                 # schema chứa bảng
+
+    tables:
+      - name: fact_customer_search
+        description: "Search event fact table"
+
+      - name: dim_date
+        description:  "Date dimension table"
+
+      - name: dim_user
+        description: "User dimension table"
+
+      - name: dim_platform
+        description: "Platform dimension table"
+
+      - name: dim_network
+        description: "Network dimension table"
+
+      - name: dim_subscription
+        description: "Subscription dimension table"
+
+      - name: bridge_user_plan
+        description: "Bridge table mapping user to subscription"
+
+      - name: dim_category
+        description: "Category dimension table"

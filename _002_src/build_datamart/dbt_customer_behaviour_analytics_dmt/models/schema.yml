@@ -1,0 +1,116 @@
+
+version: 2
+
+models:
+  - name: dmt_search_event_base
+    description: "A model capturing base search event data"
+    columns:
+      - name: event_id 
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
+      - name: day
+        description: "The day of the month when the event occurred"
+        tests:
+          - not_null
+      - name: month
+        description: "The month when the event occurred"
+        tests:
+          - not_null
+      - name: year
+        description: "The year when the event occurred"
+        tests:
+          - not_null
+      - name: day_of_week
+        description: "The day of the week when the event occurred"
+        tests:
+          - not_null
+      - name: time_slot
+        description: "The time slot when the event occurred"
+        tests:
+          - not_null
+      - name: user_id 
+        description: "The ID of the user associated with the event"
+        tests:
+          - not_null
+      - name: date_key
+        description: "The date key for the event"
+        tests: 
+          - not_null
+      - name: user_state_at_search 
+        description: "The state of the user at the time of search"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['plan', 'noplan', 'guest']
+      - name: keyword 
+        description: "The keyword used in the search"
+        tests:
+          - not_null
+      - name: main_category 
+        description: "The main category of the search"
+        tests:
+          - not_null
+
+  - name: dmt_search_event_plan
+    description: "A model capturing search event plan data"
+    columns:
+      - name: monthly_date_key
+        description: "The date key for the event"
+        tests:
+          - not_null
+      - name: plan_name
+        description: "The name of the plan associated with the event"
+        tests:
+          - not_null
+      - name: plan_type
+        description: "The type of the plan associated with the event"
+        tests:
+          - not_null
+      - name: user_count
+        description: "The number of users associated with the plan and type"
+        tests:
+          - not_null
+      
+  - name: dmt_search_event_category
+    description: "A model capturing search event category data"
+    columns:
+      - name: date_key
+        description: "The date key for the event"
+        tests:
+          - not_null
+      - name: month
+        description: "The month when the event occurred"
+        tests:
+          - not_null
+      - name: year
+        description: "The year when the event occurred"
+        tests:
+          - not_null
+      - name: day
+        description: "The day of the month when the event occurred"
+        tests:
+          - not_null
+      - name: day_of_week
+        description: "The day of the week when the event occurred"
+        tests:
+          - not_null
+      - name: time_slot
+        description: "The time slot when the event occurred"
+        tests:
+          - not_null
+      - name: user_id
+        description: "The ID of the user associated with the event"
+        tests:
+          - not_null
+      - name: user_state_at_search
+        description: "The state of the user at the time of search"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['plan', 'noplan', 'guest']
+      - name: category
+        description: "The category of the search"
+        tests:
+          - not_null
